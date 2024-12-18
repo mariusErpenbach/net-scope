@@ -1,8 +1,8 @@
-import sys 
-import subprocess 
+import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QWidget, QVBoxLayout
+from network_utils import check_connection  # Import the check_connection function
 
-class NetScope(QMainWindow): # NetScope class that inherits from QMainWindow
+class NetScope(QMainWindow):  # NetScope class that inherits from QMainWindow
    
     def __init__(self): 
         super().__init__()
@@ -10,9 +10,9 @@ class NetScope(QMainWindow): # NetScope class that inherits from QMainWindow
         self.setGeometry(100, 100, 1080, 720)
 
         # Layout
-        self.centralWidget = QWidget() # Create centralWidget with QWidget class
-        self.setCentralWidget(self.centralWidget) # Declare the new centralWidget as the centralWidget for the QMainWindow
-        self.layout = QVBoxLayout(self.centralWidget) # Create a new layout with a vertical box and add it to the centralWidget
+        self.centralWidget = QWidget()  # Create centralWidget with QWidget class
+        self.setCentralWidget(self.centralWidget)  # Declare the new centralWidget as the centralWidget for the QMainWindow
+        self.layout = QVBoxLayout(self.centralWidget)  # Create a new layout with a vertical box and add it to the centralWidget
 
         # Button
         self.scan_button = QPushButton("Scan Network", self)
@@ -26,31 +26,15 @@ class NetScope(QMainWindow): # NetScope class that inherits from QMainWindow
         self.ms_label = QLabel("Latency: -ms", self)
         self.layout.addWidget(self.ms_label)
         
+        # Local Ip 
+        self.local_ip_label = QLabel("Local IP: - ",self)
+        self.layout.addWidget(self.local_ip_label)
+
     def check_connection(self):
-        try:
-            response = subprocess.run(
-                ["ping", "-c", "1", "8.8.8.8"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            if response.returncode == 0:
-                self.status_label.setText("Status: Connected")
-                output = response.stdout.decode()
-                latency = self.extract_latency(output)
-                self.ms_label.setText(f"Latency: {latency} ms")
-            else:
-                self.status_label.setText("Status: Not connected")
-                self.ms_label.setText("Latency: -ms")
-        except Exception as e:
-            self.status_label.setText("Status: Error")
-            self.ms_label.setText(f"Error: {str(e)}")
-
-    def extract_latency(self, ping_output):
-        for line in ping_output.splitlines():
-            if "time=" in line:
-                return line.split("time=")[-1].split(" ")[0]
-        return "-"
-
+        status, latency_or_error,local_ip = check_connection()  # Use the function from network_utils
+        self.status_label.setText(f"Status: {status}")
+        self.ms_label.setText(f"Latency: {latency_or_error} ms" if status == "Connected" else f"{latency_or_error}")
+        self.local_ip_label.setText(f"Local IP: {local_ip}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
