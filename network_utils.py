@@ -3,20 +3,20 @@ import socket
 
 def check_connection():
     """
-    Checks the network connection by pinging Google's public DNS server.
-    Returns a tuple: (status, latency_or_error_message, local_ip)
+    Prüft die Netzwerkverbindung durch einen Ping zu Googles DNS.
+    Gibt ein Tuple zurück: (status, latency_or_error_message, local_ip)
     """
     try:
-        # Ping Google's DNS to check connectivity
+        # Ping zu Googles DNS
         response = subprocess.run(
             ["ping", "-c", "1", "8.8.8.8"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        
-        # Simulate a connection to an external server to get local IP
+
+        # Lokale IP ermitteln
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))  # This sends a UDP packet to get the local IP
+        s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
 
@@ -26,17 +26,41 @@ def check_connection():
             return "Connected", latency, local_ip
         else:
             return "Not connected", "-", local_ip
-        
+
     except Exception as e:
         return "Error", str(e), None
 
 def extract_latency(ping_output):
     """
-    Extracts the latency from the ping command's output.
-    Returns the latency in milliseconds as a string, or "-" if not found.
+    Extrahiert die Latenzzeit aus der Ping-Ausgabe.
+    Gibt die Latenz in Millisekunden zurück oder "-" falls nicht gefunden.
     """
     for line in ping_output.splitlines():
         if "time=" in line:
             return line.split("time=")[-1].split(" ")[0]
     return "-"
-    
+
+def scan_devices():
+    """
+    Scannt Geräte im lokalen Netzwerk mithilfe von 'arp'.
+    Gibt eine Liste von Strings (IP-Adressen oder Gerätedetails) zurück.
+    """
+    try:
+        # ARP-Tabellen-Befehl ausführen
+        result = subprocess.run(["arp", "-a"], capture_output=True, text=True)
+        if result.returncode != 0:
+            return ["Error: ARP command failed"]
+
+        # Ausgabe verarbeiten
+        devices = []
+        for line in result.stdout.splitlines():
+            if "at" in line:  # Beispielhafter Filter
+                devices.append(line.strip())
+        return devices
+
+    except FileNotFoundError:
+        # ARP-Tool nicht gefunden
+        return ["Error: 'arp' tool not found. Please install it."]
+    except Exception as e:
+        # Allgemeiner Fehler
+        return [f"Unexpected error: {e}"]
