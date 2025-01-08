@@ -57,6 +57,7 @@ def scan_devices():
             if "at" in line:  # Beispielhafter Filter
                 devices.append(line.strip())
         return devices
+        
 
     except FileNotFoundError:
         # ARP-Tool nicht gefunden
